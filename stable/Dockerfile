@@ -1,7 +1,7 @@
 FROM ubuntu:20.04
 
-ENV UID=1000
-ENV GID=1000
+ARG UID
+ARG GID
 ENV USER="developer"
 ENV JAVA_VERSION="8"
 ENV ANDROID_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip"
@@ -20,6 +20,8 @@ ENV PATH="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin:$ANDROID_SDK_ROOT/emulator:$
 
 # install all dependencies
 ENV DEBIAN_FRONTEND="noninteractive"
+RUN apt-get update \
+  && apt-get install --yes vim less
 RUN apt-get update \
   && apt-get install --yes --no-install-recommends openjdk-$JAVA_VERSION-jdk curl unzip sed git bash xz-utils libglvnd0 ssh xauth x11-xserver-utils libpulse0 libxcomposite1 libgl1-mesa-glx sudo \
   && rm -rf /var/lib/{apt,dpkg,cache,log}
@@ -64,4 +66,10 @@ RUN curl -o flutter.tar.xz $FLUTTER_URL \
 COPY entrypoint.sh /usr/local/bin/
 COPY chown.sh /usr/local/bin/
 COPY flutter-android-emulator.sh /usr/local/bin/flutter-android-emulator
+COPY 40-permissions.rules /etc/udev/rules.d
+RUN sudo apt-get install --yes qemu-kvm
+RUN sudo addgroup kvm
+RUN sudo adduser $USER kvm
+# RUN sudo chown root:kvm /dev/kvm \
+  # && sudo chmod 0660 /dev/kvm
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
